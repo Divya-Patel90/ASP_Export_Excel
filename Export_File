@@ -1,0 +1,90 @@
+protected void btnExportExcel_Click(object sender, EventArgs e)
+  {
+    DataTable dt = new DataTable();
+    dt = GetDataFromDb();
+    System.Threading.Thread.Sleep(3000); // for testing purpose to create 3 seconds delay
+    //Create a temp GridView
+    GridView gv = new GridView();
+    gv.AllowPaging = false;
+    gv.DataSource = dt;
+    gv.DataBind();
+    Response.Clear();
+    Response.Buffer = true;
+    Response.AddHeader("content-disposition", "attachment;filename=ExcelReport.xls");
+    Response.Charset = "";
+    Response.ContentType = "application/vnd.ms-excel";
+    StringWriter sw = new StringWriter();
+    HtmlTextWriter hw = new HtmlTextWriter(sw);
+    gv.RenderControl(hw);
+
+    // Append cookie
+    HttpCookie cookie = new HttpCookie("ExcelDownloadFlag");
+    cookie.Value = "Flag";
+    cookie.Expires = DateTime.Now.AddDays(1);
+    Response.AppendCookie(cookie);
+    // end
+
+    Response.Output.Write(sw.ToString());
+    Response.Flush();
+    Response.End();
+}
+HTML/ASPX Code
+Hide   Copy Code
+<table>
+           <tr>
+               <td>
+                   <asp:Button Text="Download" ID="btnExportExcel"
+                   OnClientClick="jsShowHideProgress();"
+                   runat="server" OnClick="btnExportExcel_Click" />
+               </td>
+               <td>
+                   <img style="display: none" id="imgloadinggif"
+                   src="Images/loading.gif" alt="loading.." />
+               </td>
+           </tr>
+       </table>
+JavaScript Code
+Hide   Shrink    Copy Code
+function jsShowHideProgress() {
+    setTimeout(function ()
+    { document.getElementById('imgloadinggif').style.display = 'block'; }, 200);
+    deleteCookie();
+
+    var timeInterval = 500; // milliseconds (checks the cookie for every half second )
+
+    var loop = setInterval(function () {
+        if (IsCookieValid())
+        { document.getElementById('imgloadinggif').style.display =
+        'none'; clearInterval(loop) }
+
+    }, timeInterval);
+}
+
+// cookies
+function deleteCookie() {
+    var cook = getCookie('ExcelDownloadFlag');
+    if (cook != "") {
+        document.cookie = "ExcelDownloadFlag=;
+        Path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+    }
+}
+
+function IsCookieValid() {
+    var cook = getCookie('ExcelDownloadFlag');
+    return cook != '';
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
